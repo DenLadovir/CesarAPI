@@ -1,0 +1,11 @@
+Например, для создания новой задачи:
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"Новая задача\", \"description\": \"Описание новой задачи\", \"completed\": false}"
+
+Для получения списка задач:
+curl -X GET http://localhost:8000/tasks
+
+Для обновления задачи:
+curl -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"Обновленное описание\", \"completed\": true}"
+
+Для удаления задачи:
+curl -X DELETE http://localhost:8000/tasks/{id}
