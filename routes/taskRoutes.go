@@ -3,12 +3,15 @@ package routes
 import (
 	"CesarAPI/database"
 	"CesarAPI/models"
+	"CesarAPI/utils"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type TaskHandler struct{}
@@ -21,6 +24,8 @@ func (h *TaskHandler) RegisterRoutes(r *chi.Mux, db *gorm.DB) {
 	r.Put("/tasks/{id}/status", func(w http.ResponseWriter, r *http.Request) {
 		h.UpdateTaskStatus(w, r, db) // Передаем db в метод
 	})
+	r.Post("/register", h.RegisterHandler(db))
+	r.Post("/login", h.LoginHandler(db))
 }
 
 func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +82,10 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	// Обновляем задачу
 	task.Version++            // Увеличиваем версию
 	task.ID = existingTask.ID // Устанавливаем ID для обновления
+
+	task.UpdateByUser = "Тестовый пользователь 3"
+	task.UpdateTime = time.Now().Format("02.01.2006 15:04:05")
+
 	if err := database.DB.Save(&task).Error; err != nil {
 		log.Printf("Updating error: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,6 +94,23 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(task)
+
+	//authHeader := r.Header.Get("Authorization")
+	//if authHeader == "" {
+	//	http.Error(w, "Authorization header is missing", http.StatusUnauthorized)
+	//	return
+	//}
+	//
+	//tokenString := strings.Split(authHeader, " ")[1]
+	//claims := &models.Claims{}
+	//token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+	//	return []byte("your_secret_key"), nil
+	//})
+	//
+	//if err != nil || !token.Valid {
+	//	http.Error(w, "Invalid token", http.StatusUnauthorized)
+	//	return
+	//}
 }
 
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
@@ -146,4 +172,81 @@ func (h *TaskHandler) UpdateTaskStatus(w http.ResponseWriter, r *http.Request, d
 
 	log.Printf("Статус задачи с ID %d был успешно обновлён на %s.\n", id, input.Status)
 	w.WriteHeader(http.StatusNoContent) // Успешное обновление
+}
+
+func (h *TaskHandler) RegisterHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var user models.User // Предполагается, что у вас есть структура User
+		err := json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+
+		var existingUser models.User
+		if err := db.Where("username = ?", user.Username).First(&existingUser).Error; err == nil {
+			http.Error(w, "User already exists!", http.StatusConflict)
+			return
+		}
+
+		// Хеширование пароля
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			http.Error(w, "Error hashing password", http.StatusInternalServerError)
+			return
+		}
+		user.Password = string(hashedPassword)
+
+		// Сохраните пользователя в базе данных
+		result := db.Create(&user) // Используем db.Create для автоматического заполнения полей
+		if result.Error != nil {
+			http.Error(w, "Error saving user", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("User registered successfully!")) // Можно добавить сообщение об успешной регистрации
+	}
+}
+
+func (h *TaskHandler) LoginHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var credentials struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+
+		// Декодирование JSON-данных из запроса
+		err := json.NewDecoder(r.Body).Decode(&credentials)
+		if err != nil {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+
+		var user models.User
+		// Поиск пользователя в базе данных
+		result := db.Where("username = ?", credentials.Username).First(&user)
+		if result.Error != nil {
+			http.Error(w, "Invalid credentials!", http.StatusUnauthorized)
+			return
+		}
+
+		// Проверка пароля
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
+		if err != nil {
+			http.Error(w, "Invalid credentials!", http.StatusUnauthorized)
+			return
+		}
+
+		// Генерация JWT
+		token, err := utils.GenerateJWT(user.Username)
+		if err != nil {
+			http.Error(w, "Could not generate token", http.StatusInternalServerError)
+			return
+		}
+
+		// Успешная аутентификация
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(token)) // Возвращаем токен клиенту
+	}
 }
