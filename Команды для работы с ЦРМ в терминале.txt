@@ -5,7 +5,7 @@ curl -X POST http://localhost:8000/register -H "Content-Type: application/json" 
 curl -X POST http://localhost:8000/login -H "Content-Type: application/json" -d "{\"username\": \"D10n\", \"password\": \"123789456\"}"
 
 Например, для создания новой задачи:
-curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"Новая задача\", \"description\": \"Описание новой задачи\", \"completed\": false}"
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"новая задача для проверки отправки на почту\", \"description\": \"прилетит на почту или нет, вот в чём вопрос\", \"status\": \"pending\", \"completed\": false}"
 
 Для получения списка задач:
 curl -X GET http://localhost:8000/tasks
@@ -17,6 +17,7 @@ curl -X PUT http://localhost:8000/tasks/1/status -H "Content-Type: application/j
 ..curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"просто тестирую новый функционал по изменению с записью времени и пользователя, который внёс изменения\", \"status\": \"in_progress\"}"
 // Так же после изменения задачи, для повторного изменения потребуется указать версию, чтобы изменить удалось и попытка не была заблокирована
 ..C:\Users\user>curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача (после правок)\", \"description\": \"просто тестирую новый функционал по изменению с записью времени и пользователя, который внёс изменения, и изменил формат вывода времени\", \"version\": 1, \"status\": \"pending\"}"
+
 Для удаления задачи:
 curl -X DELETE http://localhost:8000/tasks/{id}
 

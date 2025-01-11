@@ -2,6 +2,7 @@ package routes
 
 import (
 	"CesarAPI/database"
+	"CesarAPI/email"
 	"CesarAPI/models"
 	"CesarAPI/utils"
 	"encoding/json"
@@ -47,6 +48,15 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error creating task: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	emailBody := "Новая задача создана:\n\n" +
+		"Название: " + task.Title + "\n" +
+		"Описание: " + task.Description + "\n" +
+		"Статус: " + task.Status
+	err := email.SendEmail("denis.ladovir@yandex.ru", "Новая задача создана", emailBody)
+	if err != nil {
+		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
