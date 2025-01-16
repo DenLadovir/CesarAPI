@@ -103,6 +103,16 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	emailBody := "Новая задача создана:\n\n" +
+		"Название: " + task.Title + "\n" +
+		"Описание: " + task.Description + "\n" +
+		"Статус: " + task.Status
+	emailList := []string{"denis.ladovir@yandex.ru", "denis120992@gmail.com", "den-12.09.92@mail.ru"}
+	err := email.SendEmail(emailList, "Новая задача создана", emailBody)
+	if err != nil {
+		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(task)
 
