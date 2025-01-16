@@ -103,6 +103,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Добавляем расслыку на электронные почты при изменении задачи
 	emailBody := "Новая задача создана:\n\n" +
 		"Название: " + task.Title + "\n" +
 		"Описание: " + task.Description + "\n" +
