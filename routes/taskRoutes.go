@@ -4,8 +4,10 @@ import (
 	"CesarAPI/database"
 	"CesarAPI/email"
 	"CesarAPI/models"
+	"CesarAPI/telegram"
 	"CesarAPI/utils"
 	"encoding/json"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
@@ -60,6 +62,14 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
 	}
 
+	botToken := ""             // Замените на ваш токен телеграм бота
+	chatID := int64(123456789) // Замените на ваш chat_id
+	telegramMessage := fmt.Sprintf("Новая задача создана:\nНазвание: %s\nОписание: %s\nСтатус: %s", task.Title, task.Description, task.Status)
+	err = telegram.SendTelegramMessage(botToken, chatID, telegramMessage)
+	if err != nil {
+		log.Printf("Не удалось отправить уведомление в Telegram: %v\n", err)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(task)
 }
@@ -94,7 +104,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	task.Version++            // Увеличиваем версию
 	task.ID = existingTask.ID // Устанавливаем ID для обновления
 
-	task.UpdateByUser = "Тестовый пользователь 3"
+	task.UpdateByUser = "Тестовый пользователь 34"
 	task.UpdateTime = time.Now().Format("02.01.2006 15:04:05")
 
 	if err := database.DB.Save(&task).Error; err != nil {
@@ -112,6 +122,14 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	err := email.SendEmail(emailList, "Новая задача создана", emailBody)
 	if err != nil {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
+	}
+
+	botToken := ""             // Замените на ваш токен телеграм бота
+	chatID := int64(123456789) // Замените на ваш chat_id
+	telegramMessage := fmt.Sprintf("Задача обновлена:\nНазвание: %s\nОписание: %s\nСтатус: %s", task.Title, task.Description, task.Status)
+	err = telegram.SendTelegramMessage(botToken, chatID, telegramMessage)
+	if err != nil {
+		log.Printf("Не удалось отправить уведомление в Telegram: %v\n", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
