@@ -2,7 +2,9 @@ package main
 
 import (
 	"CesarAPI/database"
+	"CesarAPI/handlers"
 	"CesarAPI/middleware"
+	"CesarAPI/models"
 	"CesarAPI/routes"
 	"context"
 	"github.com/go-chi/chi/v5"
@@ -38,6 +40,11 @@ func main() {
 	// Открытые маршруты (без middleware)
 	routes.AuthRoutes(r)
 
+	// Создаем экземпляр SubscribeHandler
+	subscribeHandler := handlers.NewSubscribeHandler(database.DB)
+	r.Post("/subscribe", subscribeHandler.HandleSubscribe) // Регистрация маршрута для подписки
+	database.DB.AutoMigrate(&models.TelegramChannel{})
+
 	srv := &http.Server{
 		Addr:    ":8000",
 		Handler: r,
@@ -60,5 +67,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatalf("Ошибка при завершении работы сервера: %v\n", err)
 	}
+
 	log.Info("Сервер корректно завершил работу.")
 }

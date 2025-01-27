@@ -23,6 +23,8 @@ func SendEmail(emailList []string, subject string, body string) error {
 			log.Println("Ошибка при отправке письма:", err)
 			return err
 		}
+
+		log.Printf("Письмо успешно отправлено на %s", email)
 	}
 
 	return nil

@@ -3,8 +3,8 @@ package routes
 import (
 	"CesarAPI/database"
 	"CesarAPI/email"
+	"CesarAPI/handlers"
 	"CesarAPI/models"
-	"CesarAPI/telegram"
 	"CesarAPI/utils"
 	"encoding/json"
 	"fmt"
@@ -29,6 +29,7 @@ func (h *TaskHandler) RegisterRoutes(r *chi.Mux, db *gorm.DB) {
 	})
 	r.Post("/register", h.RegisterHandler(db))
 	r.Post("/login", h.LoginHandler(db))
+	r.Post("/api/telegram_channels", handlers.AddTelegramChannelHandler(db))
 }
 
 func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
@@ -52,23 +53,24 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	emailList, err := models.GetEmailSubscribers(database.DB)
+	if err != nil {
+		log.Printf("Не удалось получить список подписчиков: %v\n", err)
+		return
+	}
+
 	emailBody := "Новая задача создана:\n\n" +
 		"Название: " + task.Title + "\n" +
 		"Описание: " + task.Description + "\n" +
 		"Статус: " + task.Status
-	emailList := []string{"denis.ladovir@yandex.ru", "denis120992@gmail.com", "den-12.09.92@mail.ru"}
-	err := email.SendEmail(emailList, "Новая задача создана", emailBody)
+
+	err = email.SendEmail(emailList, "Задача обновлена", emailBody)
 	if err != nil {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
 	}
 
-	botToken := ""             // Замените на ваш токен телеграм бота
-	chatID := int64(123456789) // Замените на ваш chat_id
 	telegramMessage := fmt.Sprintf("Новая задача создана:\nНазвание: %s\nОписание: %s\nСтатус: %s", task.Title, task.Description, task.Status)
-	err = telegram.SendTelegramMessage(botToken, chatID, telegramMessage)
-	if err != nil {
-		log.Printf("Не удалось отправить уведомление в Telegram: %v\n", err)
-	}
+	handlers.NotifyTelegramChannels(database.DB, telegramMessage)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(task)
@@ -122,24 +124,24 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Добавляем рассылку на электронные почты при изменении задачи
+	emailList, err := models.GetEmailSubscribers(database.DB)
+	if err != nil {
+		log.Printf("Не удалось получить список подписчиков: %v\n", err)
+		return
+	}
+
 	emailBody := "Задача обновлена:\n\n" +
 		"Название: " + existingTask.Title + "\n" +
 		"Описание: " + existingTask.Description + "\n" +
 		"Статус: " + existingTask.Status
-	emailList := []string{"denis.ladovir@yandex.ru", "denis120992@gmail.com", "den-12.09.92@mail.ru"}
-	err := email.SendEmail(emailList, "Задача обновлена", emailBody)
+
+	err = email.SendEmail(emailList, "Задача обновлена", emailBody)
 	if err != nil {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
 	}
 
-	botToken := "6265294268:AAHR_FepTPa_3u8rTbRU9ke6ELLMMPeh4RA" // Замените на ваш токен телеграм бота
-	chatID := int64(476899260)                                   // Замените на ваш chat_id https://api.telegram.org/bot<Ваш_Токен>/getUpdates
 	telegramMessage := fmt.Sprintf("Задача обновлена:\nНазвание: %s\nОписание: %s\nСтатус: %s", existingTask.Title, existingTask.Description, existingTask.Status)
-	err = telegram.SendTelegramMessage(botToken, chatID, telegramMessage)
-	if err != nil {
-		log.Printf("Не удалось отправить уведомление в Telegram: %v\n", err)
-	}
+	handlers.NotifyTelegramChannels(database.DB, telegramMessage)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(existingTask)

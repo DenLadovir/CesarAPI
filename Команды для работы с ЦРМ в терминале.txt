@@ -11,8 +11,7 @@ curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d 
 curl -X GET http://localhost:8000/tasks
 
 Для обновления задачи:
-curl -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"Обновленное описание\", \"completed\": true}"
-curl -X PUT http://localhost:8000/tasks/1/status -H "Content-Type: application/json" -d '{"status": "completed"}'
+curl -X PUT http://localhost:8000/tasks/15 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"Обновленное описание для проверки рассылки из базы данных, а так же добавил логирование об успешной отправке\", \"status\": \"pending\", \"version\": 4}"
 
 ..curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"просто тестирую новый функционал по изменению с записью времени и пользователя, который внёс изменения\", \"status\": \"in_progress\"}"
 // Так же после изменения задачи, для повторного изменения потребуется указать версию, чтобы изменить удалось и попытка не была заблокирована
@@ -25,3 +24,9 @@ curl -X DELETE http://localhost:8000/tasks/{id}
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6IkQxMG4iLCJleHAiOjE3MzU5MDA0MTN9.djypfAb9tYTselsLAZSYvXhrxtEt7Ne63xhaN3MfIuo
 
 curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6IkQxMG4iLCJleHAiOjE3MzU4OTk3NTN9.O4fABtd9H15PVUQzQ8wGHy6tsiZejaNYIVfdK7Zil8Y" -d "{\"title\": \"Обновленная задача\", \"description\": \"просто тестирую новый функционал\", \"status\": \"in_progress\"}"
+
+Добавление адреса электронной почты в базу данных для рассылок:
+curl -X POST http://localhost:8000/subscribe -H "Content-Type: application/json" -d "{\"email\": \"example@mail.com\"}"
+
+Добавление телеграм канала в базу данных для рассылок: ..https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
+C:\Users\user>curl -X POST http://localhost:8000/api/telegram_channels -H "Content-Type: application/json" -d "{\"token\": \"<токен канала>>\", \"chat_id\": <ID чата>>}"
