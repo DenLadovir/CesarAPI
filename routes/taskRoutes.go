@@ -56,7 +56,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		"Название: " + task.Title + "\n" +
 		"Описание: " + task.Description + "\n" +
 		"Статус: " + task.Status
-	emailList := []string{"denis.ladovir@yandex.ru", "denis120992@gmail.com", "den-12.09.92@mail.ru"}
+	emailList := []string{"example@mail.ru"}
 	err := email.SendEmail(emailList, "Новая задача создана", emailBody)
 	if err != nil {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
