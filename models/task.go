@@ -15,3 +15,10 @@ type Task struct {
 	UpdateByUser string `json: "update_by_user"`
 	UpdateTime   string `json: "update_time"`
 }
+
+type UpdateTask struct {
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Status      *string `json:"status,omitempty"`
+	Version     int     `json:"version"`
+}

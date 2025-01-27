@@ -76,10 +76,10 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id") // Получаем ID из URL
-	var task models.Task
+	var updateTask models.UpdateTask
 
-	// Декодируем тело запроса в структуру Task
-	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+	// Декодируем тело запроса в структуру UpdateTask
+	if err := json.NewDecoder(r.Body).Decode(&updateTask); err != nil {
 		log.Printf("Updating error: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -94,46 +94,55 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Проверяем версию
-	if existingTask.Version != task.Version {
-		log.Printf("Version conflict: existing version %d, provided version %d", existingTask.Version, task.Version)
+	if existingTask.Version != updateTask.Version {
+		log.Printf("Version conflict: existing version %d, provided version %d", existingTask.Version, updateTask.Version)
 		http.Error(w, "Version conflict: task was modified by another user", http.StatusConflict)
 		return
 	}
 
-	// Обновляем задачу
-	task.Version++            // Увеличиваем версию
-	task.ID = existingTask.ID // Устанавливаем ID для обновления
+	// Обновляем поля только если они указаны
+	if updateTask.Title != nil {
+		existingTask.Title = *updateTask.Title
+	}
+	if updateTask.Description != nil {
+		existingTask.Description = *updateTask.Description
+	}
+	if updateTask.Status != nil {
+		existingTask.Status = *updateTask.Status
+	}
 
-	task.UpdateByUser = "Тестовый пользователь 34"
-	task.UpdateTime = time.Now().Format("02.01.2006 15:04:05")
+	// Увеличиваем версию
+	existingTask.Version++
+	existingTask.UpdateByUser = "Тестовый пользователь 34"
+	existingTask.UpdateTime = time.Now().Format("02.01.2006 15:04:05")
 
-	if err := database.DB.Save(&task).Error; err != nil {
+	if err := database.DB.Save(&existingTask).Error; err != nil {
 		log.Printf("Updating error: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Добавляем расслыку на электронные почты при изменении задачи
-	emailBody := "Новая задача создана:\n\n" +
-		"Название: " + task.Title + "\n" +
-		"Описание: " + task.Description + "\n" +
-		"Статус: " + task.Status
+	// Добавляем рассылку на электронные почты при изменении задачи
+	emailBody := "Задача обновлена:\n\n" +
+		"Название: " + existingTask.Title + "\n" +
+		"Описание: " + existingTask.Description + "\n" +
+		"Статус: " + existingTask.Status
 	emailList := []string{"denis.ladovir@yandex.ru", "denis120992@gmail.com", "den-12.09.92@mail.ru"}
-	err := email.SendEmail(emailList, "Новая задача создана", emailBody)
+	err := email.SendEmail(emailList, "Задача обновлена", emailBody)
 	if err != nil {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
 	}
 
-	botToken := ""             // Замените на ваш токен телеграм бота
-	chatID := int64(123456789) // Замените на ваш chat_id
-	telegramMessage := fmt.Sprintf("Задача обновлена:\nНазвание: %s\nОписание: %s\nСтатус: %s", task.Title, task.Description, task.Status)
+	botToken := "6265294268:AAHR_FepTPa_3u8rTbRU9ke6ELLMMPeh4RA" // Замените на ваш токен телеграм бота
+	chatID := int64(476899260)                                   // Замените на ваш chat_id https://api.telegram.org/bot<Ваш_Токен>/getUpdates
+	telegramMessage := fmt.Sprintf("Задача обновлена:\nНазвание: %s\nОписание: %s\nСтатус: %s", existingTask.Title, existingTask.Description, existingTask.Status)
 	err = telegram.SendTelegramMessage(botToken, chatID, telegramMessage)
 	if err != nil {
 		log.Printf("Не удалось отправить уведомление в Telegram: %v\n", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task)
+	json.NewEncoder(w).Encode(existingTask)
 
 	//authHeader := r.Header.Get("Authorization")
 	//if authHeader == "" {
