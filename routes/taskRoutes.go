@@ -133,8 +133,8 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Не удалось отправить уведомление по электронной почте: %v\n", err)
 	}
 
-	botToken := "6265294268:AAHR_FepTPa_3u8rTbRU9ke6ELLMMPeh4RA" // Замените на ваш токен телеграм бота
-	chatID := int64(476899260)                                   // Замените на ваш chat_id https://api.telegram.org/bot<Ваш_Токен>/getUpdates
+	botToken := "" // Замените на ваш токен телеграм бота
+	chatID := int64(123456789)                                   // Замените на ваш chat_id https://api.telegram.org/bot<Ваш_Токен>/getUpdates
 	telegramMessage := fmt.Sprintf("Задача обновлена:\nНазвание: %s\nОписание: %s\nСтатус: %s", existingTask.Title, existingTask.Description, existingTask.Status)
 	err = telegram.SendTelegramMessage(botToken, chatID, telegramMessage)
 	if err != nil {
