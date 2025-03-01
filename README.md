@@ -1,5 +1,38 @@
+Один из способов пользоваться программой - curl команды в терминале.
+Регистрация:
+curl -X POST http://localhost:8000/register -H "Content-Type: application/json" -d "{\"username\": \"D10n\", \"password\": \"123789456\"}"
+
+Авторизация:
+curl -X POST http://localhost:8000/login -H "Content-Type: application/json" -d "{\"username\": \"D10n\", \"password\": \"123789456\"}"
+
+Например, для создания новой задачи:
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\": \"новая задача для проверки отправки на почту\", \"description\": \"прилетит на почту или нет, вот в чём вопрос\", \"status\": \"pending\", \"completed\": false}"
+
+Для получения списка задач:
+curl -X GET http://localhost:8000/tasks
+
+Для обновления задачи:
+curl -X PUT http://localhost:8000/tasks/15 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"Обновленное описание для проверки рассылки из базы данных, а так же добавил логирование об успешной отправке\", \"status\": \"pending\", \"version\": 4}"
+
+..curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача\", \"description\": \"просто тестирую новый функционал по изменению с записью времени и пользователя, который внёс изменения\", \"status\": \"in_progress\"}"
+// Так же после изменения задачи, для повторного изменения потребуется указать версию, чтобы изменить удалось и попытка не была заблокирована
+..C:\Users\user>curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -d "{\"title\": \"Обновленная задача (после правок)\", \"description\": \"просто тестирую новый функционал по изменению с записью времени и пользователя, который внёс изменения, и изменил формат вывода времени\", \"version\": 1, \"status\": \"pending\"}"
+
+Для удаления задачи:
+curl -X DELETE http://localhost:8000/tasks/{id}
+
+Токен:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6IkQxMG4iLCJleHAiOjE3MzU5MDA0MTN9.djypfAb9tYTselsLAZSYvXhrxtEt7Ne63xhaN3MfIuo
+
+curl -X PUT http://localhost:8000/tasks/3 -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6IkQxMG4iLCJleHAiOjE3MzU4OTk3NTN9.O4fABtd9H15PVUQzQ8wGHy6tsiZejaNYIVfdK7Zil8Y" -d "{\"title\": \"Обновленная задача\", \"description\": \"просто тестирую новый функционал\", \"status\": \"in_progress\"}"
+
+Добавление адреса электронной почты в базу данных для рассылок:
+curl -X POST http://localhost:8000/subscribe -H "Content-Type: application/json" -d "{\"email\": \"example@mail.com\"}"
+
+Добавление телеграм канала в базу данных для рассылок: ..https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
+C:\Users\user>curl -X POST http://localhost:8000/api/telegram_channels -H "Content-Type: application/json" -d "{\"token\": \"<токен канала>>\", \"chat_id\": <ID чата>>}"
+
 ## Планы на будущее:
 
-- следующим этапом будет добавление функционала по отправке задачи на электронную почту; (СДЕЛАНО!)
 - после этого нужно починить работу jwt авторизации для действий с задачами через проверку по токену (в данный момент код уже есть в программе, но нужно найти, где именно лежит проблема, так как сейчас полученный код не проходит проверку)
 - последним шагом возьмусь за веб интерфейс.
